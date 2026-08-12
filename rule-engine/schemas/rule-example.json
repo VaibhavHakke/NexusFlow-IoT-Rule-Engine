@@ -1,0 +1,43 @@
+{
+  "ruleId": "rule-001",
+  "name": "High Temperature Alert",
+
+  "nodes": [
+    {
+      "id": "sensor-1",
+      "type": "sensor",
+      "data": {
+        "field": "temperature"
+      }
+    },
+
+    {
+      "id": "condition-1",
+      "type": "condition",
+      "data": {
+        "operator": ">",
+        "value": 80
+      }
+    },
+
+    {
+      "id": "alert-1",
+      "type": "alert",
+      "data": {
+        "message": "High temperature detected"
+      }
+    }
+  ],
+
+  "edges": [
+    {
+      "source": "sensor-1",
+      "target": "condition-1"
+    },
+
+    {
+      "source": "condition-1",
+      "target": "alert-1"
+    }
+  ]
+}
