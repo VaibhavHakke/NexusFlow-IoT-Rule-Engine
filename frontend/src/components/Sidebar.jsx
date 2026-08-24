@@ -1,21 +1,22 @@
 export default function Sidebar() {
   return (
-    <aside
-      style={{
-        width: "220px",
-        background: "#111827",
-        color: "#fff",
-        padding: "24px",
-      }}
-    >
-      <h2>NexusFlow</h2>
+    <aside className="sidebar">
+      <h1 className="brand">NexusFlow</h1>
 
-      <hr />
+      <div className="line"></div>
 
-      <p>📊 Dashboard</p>
-      <p>🔗 Devices</p>
-      <p>⚙ Rule Builder</p>
-      <p>📈 Telemetry</p>
+      <nav>
+        <div className="nav-item active">📊 Dashboard</div>
+        <div className="nav-item">🛰 Devices</div>
+        <div className="nav-item">⚙ Rule Builder</div>
+        <div className="nav-item">📡 Telemetry</div>
+        <div className="nav-item">📈 Analytics</div>
+        <div className="nav-item">👤 Profile</div>
+      </nav>
+
+      <div className="sidebar-footer">
+        <small>Version 1.0</small>
+      </div>
     </aside>
   );
 }

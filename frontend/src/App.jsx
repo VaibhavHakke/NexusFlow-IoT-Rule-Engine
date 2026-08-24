@@ -1,7 +1,7 @@
-import DashboardPage from "./pages/Dashboard/DashboardPage";
+import RuleBuilderPage from "./pages/RuleBuilder/RuleBuilderPage";
 
 function App() {
-  return <DashboardPage />;
+  return <RuleBuilderPage />;
 }
 
 export default App;
