@@ -6,7 +6,7 @@ const PALETTE = [
   { type: 'actionTrigger', label: 'Action Trigger', badge: 'ACT', hint: 'Condition + alert' },
 ];
 
-export default function Sidebar({ onSave, onActivate, isActive, graphName, onNameChange, saving }) {
+export default function Sidebar({ onSave, onActivate, isActive, graphName, onNameChange, saving, onAddNode }) {
   const onDragStart = (event, nodeType) => {
     event.dataTransfer.setData('application/nexusflow-node', nodeType);
     event.dataTransfer.effectAllowed = 'move';
@@ -16,7 +16,9 @@ export default function Sidebar({ onSave, onActivate, isActive, graphName, onNam
     <aside className="nf-sidebar">
       <div className="nf-sidebar__section">
         <div className="nf-eyebrow mono">01 · NODE LIBRARY</div>
-        <p className="nf-sidebar__hint">Drag a node onto the canvas to build your rule graph.</p>
+        <p className="nf-sidebar__hint">
+          Drag a node onto the canvas — or just click it to drop it automatically.
+        </p>
 
         {PALETTE.map((item) => (
           <div
@@ -24,6 +26,9 @@ export default function Sidebar({ onSave, onActivate, isActive, graphName, onNam
             className={`nf-palette-item nf-palette-item--${item.type}`}
             draggable
             onDragStart={(e) => onDragStart(e, item.type)}
+            onClick={() => onAddNode?.(item.type)}
+            role="button"
+            tabIndex={0}
           >
             <span className="nf-palette-item__badge mono">{item.badge}</span>
             <div>

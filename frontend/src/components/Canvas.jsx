@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState, useMemo } from 'react';
+import React, { useCallback, useRef, useState, useMemo, forwardRef, useImperativeHandle } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -28,7 +28,7 @@ const defaultDataByType = (type, devices) => {
   return {};
 };
 
-export default function Canvas({ devices, activeEdgeIds, onGraphChange, initialGraph }) {
+const Canvas = forwardRef(function Canvas({ devices, activeEdgeIds, onGraphChange, initialGraph }, ref) {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
@@ -40,7 +40,6 @@ export default function Canvas({ devices, activeEdgeIds, onGraphChange, initialG
   const [nodes, setNodes, onNodesChange] = useNodesState(initialGraph?.nodes || []);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialGraph?.edges || []);
 
-  // Give each node's data an onChange callback bound to its own id
   const withHandlers = useCallback(
     (rawNodes) =>
       rawNodes.map((n) => ({
@@ -76,22 +75,27 @@ export default function Canvas({ devices, activeEdgeIds, onGraphChange, initialG
     [setEdges]
   );
 
-  const onDragOver = useCallback((event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }, []);
+  const addNode = useCallback(
+    (type, screenPos) => {
+      let position = { x: 120 + Math.random() * 60, y: 120 + Math.random() * 200 };
 
-  const onDrop = useCallback(
-    (event) => {
-      event.preventDefault();
-      const type = event.dataTransfer.getData('application/nexusflow-node');
-      if (!type || !reactFlowInstance) return;
-
-      const bounds = reactFlowWrapper.current.getBoundingClientRect();
-      const position = reactFlowInstance.project({
-        x: event.clientX - bounds.left,
-        y: event.clientY - bounds.top,
-      });
+      if (reactFlowInstance) {
+        if (screenPos && reactFlowWrapper.current) {
+          const bounds = reactFlowWrapper.current.getBoundingClientRect();
+          position = reactFlowInstance.project({
+            x: screenPos.x - bounds.left,
+            y: screenPos.y - bounds.top,
+          });
+        } else {
+          const bounds = reactFlowWrapper.current?.getBoundingClientRect();
+          if (bounds) {
+            position = reactFlowInstance.project({
+              x: bounds.width / 2 + (nodes.length % 5) * 40,
+              y: bounds.height / 3 + (nodes.length % 5) * 60,
+            });
+          }
+        }
+      }
 
       const newNode = {
         id: nextId(),
@@ -102,10 +106,26 @@ export default function Canvas({ devices, activeEdgeIds, onGraphChange, initialG
 
       setNodes((nds) => nds.concat(newNode));
     },
-    [reactFlowInstance, devices, setNodes]
+    [reactFlowInstance, devices, setNodes, nodes.length]
   );
 
-  // Bubble the serializable graph up whenever it changes
+  useImperativeHandle(ref, () => ({ addNode }), [addNode]);
+
+  const onDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (event) => {
+      event.preventDefault();
+      const type = event.dataTransfer.getData('application/nexusflow-node');
+      if (!type) return;
+      addNode(type, { x: event.clientX, y: event.clientY });
+    },
+    [addNode]
+  );
+
   const emitGraph = useCallback(() => {
     const serializable = {
       nodes: nodes.map(({ id, type, position, data }) => {
@@ -117,14 +137,19 @@ export default function Canvas({ devices, activeEdgeIds, onGraphChange, initialG
     onGraphChange(serializable);
   }, [nodes, edges, onGraphChange]);
 
-  // Re-emit on any change (cheap enough at this scale)
   React.useEffect(() => {
     emitGraph();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges]);
 
   return (
-    <div className="nf-canvas blueprint-grid" ref={reactFlowWrapper}>
+    <div className="nf-canvas blueprint-grid" ref={reactFlowWrapper} style={{ width: '100%', height: '100%' }}>
+      {nodes.length === 0 && (
+        <div className="nf-canvas__empty mono">
+          Canvas is empty — drag a node from the left panel, or click a node in the
+          panel to drop it here automatically.
+        </div>
+      )}
       <ReactFlow
         nodes={displayNodes}
         edges={displayEdges}
@@ -153,4 +178,6 @@ export default function Canvas({ devices, activeEdgeIds, onGraphChange, initialG
       </ReactFlow>
     </div>
   );
-}
+});
+
+export default Canvas;

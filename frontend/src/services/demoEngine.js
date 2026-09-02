@@ -2,13 +2,6 @@ import { Subject } from 'rxjs';
 import { filter, map, bufferCount, scan } from 'rxjs/operators';
 import { DEMO_DEVICES, randomReading } from '../data/demoDevices.js';
 
-/**
- * This file is the BROWSER twin of backend/src/services/streamCompiler.js
- * and backend/src/services/mockGenerator.js. Same node types, same
- * operators, same shape of output — so when you flip DEMO_MODE to false,
- * nothing about your saved rule graphs or UI logic needs to change.
- */
-
 export const telemetry$ = new Subject();
 
 let generatorHandle = null;
@@ -33,8 +26,6 @@ export function stopDemoGenerator() {
   clearInterval(generatorHandle);
   generatorHandle = null;
 }
-
-// ---- Rule graph compiler (identical semantics to the backend version) ----
 
 let activeSubscriptions = [];
 
@@ -87,10 +78,6 @@ export function stopActiveGraph() {
   activeSubscriptions = [];
 }
 
-/**
- * Compiles { nodes, edges } into live RxJS pipelines running in the browser.
- * callbacks: { onEdgeActivity(edgeIds), onAlert(alert), onValueUpdate({deviceId, nodeId, value}) }
- */
 export function compileAndRun(graph, callbacks = {}) {
   stopActiveGraph();
   const { nodes = [], edges = [] } = graph;

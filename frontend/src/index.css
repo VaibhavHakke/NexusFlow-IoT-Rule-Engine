@@ -36,7 +36,6 @@ body {
 
 ::selection { background: var(--cyan); color: #06110f; }
 
-/* faint blueprint grid, evokes a schematic / control-room feel */
 .blueprint-grid {
   background-image:
     linear-gradient(rgba(79, 209, 197, 0.045) 1px, transparent 1px),

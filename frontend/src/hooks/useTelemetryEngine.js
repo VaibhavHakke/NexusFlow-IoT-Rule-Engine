@@ -28,14 +28,11 @@ export default function useTelemetryEngine() {
     setTimeout(() => setActiveEdgeIds(new Set()), 600);
   }, []);
 
-  // ----------------------- DEMO MODE -----------------------
   useEffect(() => {
     if (!DEMO_MODE) return;
 
     demoEngine.startDemoGenerator(1000);
 
-    // Always chart raw telemetry for every demo device, regardless of
-    // whether a rule graph is compiled — gives instant visual feedback.
     const sub = demoEngine.telemetry$.subscribe((reading) => {
       appendPoint(reading.deviceId, reading.value);
     });
@@ -47,7 +44,6 @@ export default function useTelemetryEngine() {
     };
   }, [appendPoint]);
 
-  // ----------------------- BACKEND MODE -----------------------
   useEffect(() => {
     if (DEMO_MODE) return;
 
@@ -88,7 +84,6 @@ export default function useTelemetryEngine() {
     return () => socketRef.current?.close();
   }, [appendPoint, flashEdges]);
 
-  // Poll history so backend-mode dashboard also has live-moving charts
   useEffect(() => {
     if (DEMO_MODE || devices.length === 0) return;
     const poll = () => {
@@ -103,8 +98,6 @@ export default function useTelemetryEngine() {
     const id = setInterval(poll, 1200);
     return () => clearInterval(id);
   }, [devices, appendPoint]);
-
-  // ----------------------- Shared actions -----------------------
 
   const activateGraph = useCallback(
     async (graph, graphName) => {
@@ -142,7 +135,6 @@ export default function useTelemetryEngine() {
 
   const saveGraph = useCallback(async (graph, graphName) => {
     if (DEMO_MODE) {
-      // Nothing to persist in demo mode — graphs live in component state only.
       return { ok: true, id: 'demo-local' };
     }
     try {

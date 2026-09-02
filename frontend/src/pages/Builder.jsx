@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import Canvas from '../components/Canvas.jsx';
 
@@ -13,6 +13,12 @@ export default function Builder({
   isActive,
   saving,
 }) {
+  const canvasRef = useRef(null);
+
+  const handleAddNode = (type) => {
+    canvasRef.current?.addNode(type);
+  };
+
   return (
     <div className="nf-page nf-page--builder">
       <Sidebar
@@ -22,9 +28,15 @@ export default function Builder({
         graphName={graphName}
         onNameChange={onNameChange}
         saving={saving}
+        onAddNode={handleAddNode}
       />
       <main className="nf-main">
-        <Canvas devices={devices} activeEdgeIds={activeEdgeIds} onGraphChange={onGraphChange} />
+        <Canvas
+          ref={canvasRef}
+          devices={devices}
+          activeEdgeIds={activeEdgeIds}
+          onGraphChange={onGraphChange}
+        />
       </main>
     </div>
   );
