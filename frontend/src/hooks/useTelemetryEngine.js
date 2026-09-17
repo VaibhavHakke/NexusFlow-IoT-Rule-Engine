@@ -28,11 +28,11 @@ export default function useTelemetryEngine() {
     setTimeout(() => setActiveEdgeIds(new Set()), 600);
   }, []);
 
+  // DEMO MODE (no backend) — unchanged
   useEffect(() => {
     if (!DEMO_MODE) return;
 
     demoEngine.startDemoGenerator(1000);
-
     const sub = demoEngine.telemetry$.subscribe((reading) => {
       appendPoint(reading.deviceId, reading.value);
     });
@@ -44,14 +44,46 @@ export default function useTelemetryEngine() {
     };
   }, [appendPoint]);
 
+  // REAL MODE — talks to the actual backend + MongoDB via REST + WebSocket
   useEffect(() => {
     if (DEMO_MODE) return;
 
-    fetch('/api/telemetry/devices')
-      .then((r) => r.json())
-      .then(setDevices)
-      .catch(() => setDevices([]));
+    let pollInterval;
 
+    // 1. Load device list from backend
+    const loadDevices = async () => {
+      try {
+        const res = await fetch('/api/telemetry/devices');
+        const data = await res.json();
+        setDevices(data);
+      } catch (err) {
+        console.error('Failed to load devices:', err);
+        setDevices([]);
+      }
+    };
+    loadDevices();
+    pollInterval = setInterval(loadDevices, 5000);
+
+    // 2. Hydrate recent history for each device so chart isn't empty on load
+    const hydrateHistory = async () => {
+      try {
+        const res = await fetch('/api/telemetry/devices');
+        const list = await res.json();
+        for (const d of list) {
+          const histRes = await fetch(`/api/telemetry/${d.deviceId}/recent?limit=${MAX_POINTS}`);
+          const rows = await histRes.json();
+          setSeriesByDevice((prev) => ({
+            ...prev,
+            [d.deviceId]: rows.map((r) => ({ value: r.value, ts: new Date(r.timestamp).getTime() })),
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to hydrate history:', err);
+      }
+    };
+    hydrateHistory();
+
+    // 3. Connect WebSocket for live updates — this was the broken part
     const connect = () => {
       setConnectionStatus('connecting');
       const socket = new WebSocket(WS_URL);
@@ -75,29 +107,18 @@ export default function useTelemetryEngine() {
             flashEdges(msg.edgeIds || []);
           }
         } catch {
-          /* ignore */
+          /* ignore malformed messages */
         }
       };
     };
 
     connect();
-    return () => socketRef.current?.close();
-  }, [appendPoint, flashEdges]);
 
-  useEffect(() => {
-    if (DEMO_MODE || devices.length === 0) return;
-    const poll = () => {
-      devices.forEach((d) => {
-        fetch(`/api/telemetry/history/${d.deviceId}?limit=1`)
-          .then((r) => r.json())
-          .then((rows) => rows[0] && appendPoint(d.deviceId, rows[0].value))
-          .catch(() => {});
-      });
+    return () => {
+      clearInterval(pollInterval);
+      socketRef.current?.close();
     };
-    poll();
-    const id = setInterval(poll, 1200);
-    return () => clearInterval(id);
-  }, [devices, appendPoint]);
+  }, [appendPoint, flashEdges]);
 
   const activateGraph = useCallback(
     async (graph, graphName) => {

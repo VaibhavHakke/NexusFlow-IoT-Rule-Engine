@@ -1,9 +1,12 @@
-import React, { useState, useCallback } from 'react';
+import "./App.css";
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Home from './pages/Home.jsx';
 import Builder from './pages/Builder.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
+import AlertPopup from './components/AlertPopup.jsx';
 import useTelemetryEngine from './hooks/useTelemetryEngine.js';
-import './App.css';
+import playAlertSound from './utils/alertSound.js';
+
 
 const PAGES = [
   { id: 'home', label: 'Home' },
@@ -17,6 +20,9 @@ export default function App() {
   const [currentGraph, setCurrentGraph] = useState({ nodes: [], edges: [] });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  const [popupAlert, setPopupAlert] = useState(null);
+
+  const prevAlertCountRef = useRef(0);
 
   const {
     demoMode,
@@ -29,6 +35,19 @@ export default function App() {
     activateGraph,
     saveGraph,
   } = useTelemetryEngine();
+
+  // Whenever a NEW alert arrives (array grows), pop up a banner + play a beep.
+  useEffect(() => {
+    if (alerts.length > prevAlertCountRef.current) {
+      const latest = alerts[0];
+      setPopupAlert(latest);
+      playAlertSound();
+      const t = setTimeout(() => setPopupAlert(null), 6000);
+      prevAlertCountRef.current = alerts.length;
+      return () => clearTimeout(t);
+    }
+    prevAlertCountRef.current = alerts.length;
+  }, [alerts]);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -82,6 +101,8 @@ export default function App() {
           <span className="mono">{demoMode ? 'DEMO DATA' : connectionStatus.toUpperCase()}</span>
         </div>
       </header>
+
+      <AlertPopup alert={popupAlert} onClose={() => setPopupAlert(null)} />
 
       {page === 'home' && <Home onEnter={setPage} demoMode={demoMode} />}
 

@@ -1,13 +1,14 @@
-import express from "express";
+const mongoose = require("mongoose");
 
-const router = express.Router();
+const deviceSchema = new mongoose.Schema(
+  {
+    deviceName: String,
+    location: String,
+    temperature: Number,
+    humidity: Number,
+    status: String,
+  },
+  { timestamps: true }
+);
 
-router.get("/", (req, res) => {
-  res.json({ message: "Get all devices" });
-});
-
-router.post("/", (req, res) => {
-  res.json({ message: "Device created" });
-});
-
-export default router;
+module.exports = mongoose.model("Device", deviceSchema);
